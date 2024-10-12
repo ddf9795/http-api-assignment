@@ -2,9 +2,95 @@
 <html lang="en">
 <head>
   <title>Our simple HTTP server</title>
-  <link rel="stylesheet" type="text/css" href="/style.css">
+  <link rel="stylesheet" type="text/css" href="style.css">
   
   <script>
+    //Handle response takes in the response object (from our fetch request), and 
+    //a boolean of if we should parse the response or not (since head requests have
+    //no actual response). It is marked as async because we will use await.
+    const handleResponse = async (response, parseResponse) => {
+      //Grab the content section so that we can write to it
+      const content = document.querySelector('#content');
+
+      //Based on the status of the response, write something.
+      switch(response.status) {
+        case 200: 
+          content.innerHTML = `<b>Success</b>`;
+          break;
+        case 201:
+          content.innerHTML = `<b>Created</b>`;
+          break;
+        case 400: 
+          content.innerHTML = `<b>Bad Request</b>`;
+          break;
+        case 401:
+          content.innerHTML = `<b>Unauthorized</b>`;
+          break;
+        case 403:
+          content.innerHTML = `<b>Forbidden</b>`;
+          break;
+        case 500:
+          content.innerHTML = `<b>Internal Server Error</b>`;
+          break;
+        case 501:
+          content.innerHTML = `<b>Not Implemented</b>`;
+          break;
+        case 404:
+          content.innerHTML = `<b>Resource Not Found</b>`;
+          break;
+        default: 
+          content.innerHTML = `Error code not implemented by client.`;
+          break;
+      }
+
+      //If we should parse a response (meaning we made a get request)
+      if(parseResponse) {
+        const typeSelect = document.querySelector('#type');
+
+        let obj;
+
+        if (typeSelect.value === 'application/json') {
+          obj = await response.json();
+          let jsonResponse = JSON.stringify(obj);
+          console.log(jsonResponse);
+          //To display the data easily, we will just stringify it again and display it.
+          content.innerHTML += `<p>Message: ${obj.message}</p>`;
+        }
+        else {
+          obj = await response.text();
+          console.log(obj);
+          const parser = new DOMParser();
+          let parsedXml = parser.parseFromString(obj, 'text/xml');
+          //To display the data easily, we will just stringify it again and display it.
+          content.innerHTML += `<p>Message: ${parsedXml.children.item(0).children.item(0).textContent}</p>`;
+        }
+      } else {
+        //If we don't have a response to parse, just say we recieved metadata
+        content.innerHTML += `<p>Meta Data Received</p>`;
+      }
+    };
+
+    const init = () => {
+      const pageSelect = document.querySelector('#page');
+      const typeSelect = document.querySelector('#type');
+      const sendButton = document.querySelector('button#send');
+
+      sendButton.addEventListener('click', async function () {
+          console.log('press registered')
+          let response = await fetch(pageSelect.value, {
+            method: 'get',
+            headers: {
+              'Accept': typeSelect.value
+            },
+
+          })
+          
+          handleResponse(response, 'get');
+        });
+      
+    }
+
+    window.onload = init;
 
   </script>
 </head>
